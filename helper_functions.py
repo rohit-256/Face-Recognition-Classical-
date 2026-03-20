@@ -68,6 +68,30 @@ def MDA(X, m, M):
     return A, class_mean,sigma_w
 
 
+    ############################ Function to perform k-NN classification (return k nearest neighbours as well)
+
+def k_NN(X_train, X_test, k):
+    #X_train training data l x N_train, first row contains labels
+    #X_test testing data l x N_test, first row contains labels
+    y_train = X_train[0,:]
+    y_test = X_test[0,:]
+    X_train = np.delete(X_train, 0, axis=0)
+    X_test =  np.delete(X_test, 0, axis=0)
+    l,N_test = X_test.shape
+    N_train = X_train.shape[1]
     
+    distances = np.zeros((N_test,N_train))
+    for i in range(N_test):
+        delta = X_train - X_test[:,i].reshape(-1,1)
+        distances[i,:] = np.sum(delta * delta, axis = 0)
+    # get indices of k smallest elements of each row using np.partition
 
+    neighbour_indices = np.argpartition(distances, k, axis = 1)[:,:k]
+    #map indices to labels
+    neighbours = y_train[neighbour_indices]
 
+    neighbours = neighbours.astype(int)
+
+    nearest = np.array([np.bincount(row).argmax() for row in neighbours])
+
+    return nearest.reshape(1,-1), neighbours
