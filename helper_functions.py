@@ -18,7 +18,7 @@ def PCA(X,m):
     #eigh is for symm matrices and sorts eigen values in ascending order
     eig_values,eig_vectors = np.linalg.eigh(sigma)
     A = eig_vectors[:,-m:]
-    return A.T
+    return A.T, mean
             
     
 
@@ -67,6 +67,10 @@ def MDA(X, m, M):
     A = largest_m_eigenvectors.T
     return A, class_mean,sigma_w
 
+def bayes_classifier(X_train,X_test, M):
+    N_train,l = X_train.shape
+    a = l//M # no of samples per class
+    
 
     ############################ Function to perform k-NN classification (return k nearest neighbours as well)
 
