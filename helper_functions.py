@@ -70,8 +70,16 @@ def MDA(X, m, M):
 def bayes_classifier(X_train,X_test, M):
     N_train,l = X_train.shape
     a = l//M # no of samples per class
-    
+    class_means = X_train.reshape(N_train,M,a).mean(axis = 2)
+    X_train = X_train - class_means
+    ##calculate all the cov matrices #readability but too much memory? 
+    sigma = np.zeros(m,N_train,N_train)
+    for i in range(M):
+        for j in range(a*i, (i+1)*a-1)):
+            sigma[j//a,:,:] = sigma[j//a,:,:] + 1/a*X_train[:,j]*X_train[:,j].T
 
+    sigma_inv = np.linalg.inv(sigma)
+    
     ############################ Function to perform k-NN classification (return k nearest neighbours as well)
 
 def k_NN(X_train, X_test, k):
