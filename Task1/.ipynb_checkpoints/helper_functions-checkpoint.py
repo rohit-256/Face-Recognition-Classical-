@@ -18,7 +18,7 @@ def PCA(X,m):
     #eigh is for symm matrices and sorts eigen values in ascending order
     eig_values,eig_vectors = np.linalg.eigh(sigma)
     A = eig_vectors[:,-m:]
-    return A.T
+    return A.T, mean
             
     
 

@@ -67,19 +67,7 @@ def MDA(X, m, M):
     A = largest_m_eigenvectors.T
     return A, class_mean,sigma_w
 
-# def bayes_classifier(X_train,X_test, M):
-#     N_train,l = X_train.shape
-#     a = l//M # no of samples per class
-#     class_means = X_train.reshape(N_train,M,a).mean(axis = 2)
-#     X_train = X_train - class_means
-#     ##calculate all the cov matrices #readability but too much memory? 
-#     sigma = np.zeros(m,N_train,N_train)
-#     for i in range(M):
-#         for j in range(a*i, (i+1)*a-1)):
-#             sigma[j//a,:,:] = sigma[j//a,:,:] + 1/a*X_train[:,j]*X_train[:,j].T
 
-#     sigma_inv = np.linalg.inv(sigma)
-    
     ############################ Function to perform k-NN classification (return k nearest neighbours as well)
 
 def k_NN(X_train, X_test, k):
@@ -91,14 +79,14 @@ def k_NN(X_train, X_test, k):
     X_test =  np.delete(X_test, 0, axis=0)
     l,N_test = X_test.shape
     N_train = X_train.shape[1]
-    
     distances = np.zeros((N_test,N_train))
     for i in range(N_test):
         delta = X_train - X_test[:,i].reshape(-1,1)
         distances[i,:] = np.sum(delta * delta, axis = 0)
+    
     # get indices of k smallest elements of each row using np.partition
-
     neighbour_indices = np.argpartition(distances, k, axis = 1)[:,:k]
+    
     #map indices to labels
     neighbours = y_train[neighbour_indices]
 
