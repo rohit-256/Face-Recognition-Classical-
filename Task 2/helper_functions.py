@@ -21,11 +21,6 @@ def PCA(X,m):
     return A.T, mean
             
     
-
-
-
-
-
 ####################### Function to perform MDA
 
 def MDA(X, m, M):
@@ -67,8 +62,41 @@ def MDA(X, m, M):
     A = largest_m_eigenvectors.T
     return A, class_mean,sigma_w
 
+############################ Function to perform Gaussian Bayes classification 
+#datasets should be arranged one class after the other 
+def Gaussian_Bayes(X_train,X_test,M):
+    #assuming uniform priors
+    l, N_train = X_train.shape
+    N_test = X_test.shape[1]
+    #learn mean and covariance of classes
+    #no of samples per class
+    a = N_train//M
+    class_means = X_train.reshape(l,M,a).mean(axis = 2)
 
-    ############################ Function to perform k-NN classification (return k nearest neighbours as well)
+    #find cov matrix of all classes
+    sigma = np.zeros((M,l,l))
+    for i in range(M):
+        for j in range(a*i,(i+1)*a-1):
+            sigma[i,:,:] = sigma[i,:,:] + (1/a) * X_train[:,j] @ X_train[:,j].T
+
+    #we have to construct a matrix having N_test rows and M columns
+    # element i,j contains discriminant of x_test_i for class j
+    determinants = np.linalg.det(sigma) # 1xM
+    sigma_inv = np.linalg.inv(sigma)
+    disc = np.zeros((N_test,M))
+    #(x-u).Tsigma_inv*(x-u)
+
+    for i in range(N_test):
+        for j in range(M):
+            disc[i,j] = -0.5*determinants[j] + -0.5*(X_test[:,i]-class_means[:,j]).T @ sigma_inv[j,:,:] @ (X_test[:,i]-class_means[:,j])
+
+    classified = np.argmax(disc, axis = 1)
+    return classified
+    
+
+
+############################ Function to perform k-NN classification (return k nearest neighbours as well)
+#datasets should be arranged one class after the other with 0th row containing labels
 
 def k_NN(X_train, X_test, k):
     #X_train training data l x N_train, first row contains labels
