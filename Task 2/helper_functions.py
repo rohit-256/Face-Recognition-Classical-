@@ -128,3 +128,42 @@ def k_NN(X_train, X_test, k):
     nearest = np.array([np.bincount(row).argmax() for row in neighbours])
 
     return nearest.reshape(1,-1), neighbours
+
+##############################################################################################################################
+# given training data and weights, find the best stump (polarity, feature index and threshold) for AdaBoost
+class DecisionStump:
+    def __init__(self):
+        self.k = None      # feature index
+        self.theta = None  # threshold
+        self.pol = 1         # polarity
+
+    def predict(self, X):
+        return np.sign(self.pol * (X[self.k,:] - self.theta)).reshape(1,-1)
+def best_stump(X_train,y_train,P):
+    l, N_train = X_train.shape
+    best = DecisionStump()
+    min_err = 1
+    for k in range(l):
+        #sort kth row in ascending order (easier to find thresholds and evaluate)
+        idx = np.argsort(X_train[k, :])
+        Xk = X_train[k, idx]
+        yk = y_train[:,idx]
+        Pk = P[:,idx]
+
+        # candidate thresholds: midpoints between the entries of rwo k
+        thresholds = (Xk[:-1] + Xk[1:]) / 2
+        thresholds = np.concatenate(([Xk[0] - 1], thresholds, [Xk[-1] + 1]))
+
+        for theta in thresholds:
+            #for checking both polarities
+            for pol in [1, -1]:
+                pred = np.sign(pol * (Xk - theta))
+                err = np.sum(Pk * (pred != yk))
+
+                if err < min_err:
+                    min_err = err
+                    best.k = k
+                    best.theta = theta
+                    best.pol = pol
+
+    return best, min_err

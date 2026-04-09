@@ -21,11 +21,6 @@ def PCA(X,m):
     return A.T, mean
             
     
-
-
-
-
-
 ####################### Function to perform MDA
 
 def MDA(X, m, M):
@@ -67,8 +62,46 @@ def MDA(X, m, M):
     A = largest_m_eigenvectors.T
     return A, class_mean,sigma_w
 
+############################ Function to perform Gaussian Bayes classification 
+#datasets should be arranged one class after the other 
+def Gaussian_Bayes(X_train,X_test,M,epsilon):
+    #assuming uniform priors
+    l, N_train = X_train.shape
+    N_test = X_test.shape[1]
+    #learn mean and covariance of classes
+    #no of samples per class
+    a = N_train//M
+    class_means = X_train.reshape(l,M,a).mean(axis = 2)
+#     print(class_means.shape)
+#     print(a)
+    #find cov matrix of all classes
+    sigma = np.zeros((M,l,l))
+    for i in range(M):
+        for j in range(a*i,(i+1)*a):
+            diff = (X_train[:, j] - class_means[:, i]).reshape(-1, 1)
+            sigma[i,:,:] += (1/a) * (diff @ diff.T)
+    #we have to construct a matrix having N_test rows and M columns
+    # element i,j contains discriminant of x_test_i for class j
+#     print(sigma)
+    reg = np.stack([epsilon*np.eye(l)] * M)
 
-    ############################ Function to perform k-NN classification (return k nearest neighbours as well)
+    determinants = np.linalg.det(sigma+reg) # 1xM
+
+    sigma_inv = np.linalg.inv(sigma+reg)
+    disc = np.zeros((N_test,M))
+    #(x-u).Tsigma_inv*(x-u)
+
+    for i in range(N_test):
+        for j in range(M):
+            disc[i,j] = -0.5*np.log(determinants[j]) + -0.5*(X_test[:,i]-class_means[:,j]).T @ sigma_inv[j,:,:] @ (X_test[:,i]-class_means[:,j])
+
+    classified = np.argmax(disc, axis = 1)
+    return classified
+    
+
+
+############################ Function to perform k-NN classification (return k nearest neighbours as well)
+#datasets should be arranged one class after the other with 0th row containing labels
 
 def k_NN(X_train, X_test, k):
     #X_train training data l x N_train, first row contains labels
@@ -95,3 +128,42 @@ def k_NN(X_train, X_test, k):
     nearest = np.array([np.bincount(row).argmax() for row in neighbours])
 
     return nearest.reshape(1,-1), neighbours
+
+##############################################################################################################################
+# given training data and weights, find the best stump (polarity, feature index and threshold) for AdaBoost
+class DecisionStump:
+    def __init__(self):
+        self.k = None      # feature index
+        self.theta = None  # threshold
+        self.pol = 1         # polarity
+
+    def predict(self, X):
+        return np.sign(self.pol * (X[self.k,:] - self.theta)).reshape(1,-1)
+def best_stump(X_train,y_train,P):
+    l, N_train = X_train.shape
+    best = DecisionStump()
+    min_err = 1
+    for k in range(l):
+        #sort kth row in ascending order (easier to find thresholds and evaluate)
+        idx = np.argsort(X_train[k, :])
+        Xk = X_train[k, idx]
+        yk = y_train[:,idx]
+        Pk = P[:,idx]
+
+        # candidate thresholds: midpoints between the entries of rwo k
+        thresholds = (Xk[:-1] + Xk[1:]) / 2
+        thresholds = np.concatenate(([Xk[0] - 1], thresholds, [Xk[-1] + 1]))
+
+        for theta in thresholds:
+            #for checking both polarities
+            for pol in [1, -1]:
+                pred = np.sign(pol * (Xk - theta))
+                err = np.sum(Pk * (pred != yk))
+
+                if err < min_err:
+                    min_err = err
+                    best.k = k
+                    best.theta = theta
+                    best.pol = pol
+
+    return best, min_err
